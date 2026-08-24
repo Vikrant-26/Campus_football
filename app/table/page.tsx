@@ -1,6 +1,7 @@
 export const instant = false;
 
 import Link from "next/link";
+import MobileNav from "@/app/components/MobileNav";
 import { createClient } from "@/lib/supabase/server";
 import TableRealtime from "./TableRealtime";
 
@@ -77,7 +78,7 @@ export default async function TablePage() {
     <main className="min-h-screen bg-slate-950 text-white">
       {/* NAVBAR */}
 
-      <nav className="border-b border-slate-800 bg-slate-950">
+      <nav className="border-b border-slate-800 bg-slate-950 relative">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4">
           <Link
             href="/"
@@ -129,6 +130,8 @@ export default async function TablePage() {
               Stats
             </Link>
           </div>
+
+          <MobileNav currentPath="/table" />
         </div>
       </nav>
 

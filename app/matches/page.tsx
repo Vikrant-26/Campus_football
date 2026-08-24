@@ -2,6 +2,7 @@ export const instant = false;
 
 import RealtimeRefresh from "../components/RealtimeRefresh";
 import Link from "next/link";
+import MobileNav from "@/app/components/MobileNav";
 import { createClient } from "@/lib/supabase/server";
 import LiveMatchListClock from "./LiveMatchListClock";
 
@@ -236,7 +237,7 @@ export default async function MatchesPage() {
           NAVBAR
           ================================================== */}
 
-      <nav className="border-b border-slate-800 bg-slate-950">
+      <nav className="border-b border-slate-800 bg-slate-950 relative">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4">
           <Link
             href="/"
@@ -288,6 +289,8 @@ export default async function MatchesPage() {
               Stats
             </Link>
           </div>
+
+          <MobileNav currentPath="/matches" />
         </div>
       </nav>
 

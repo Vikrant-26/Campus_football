@@ -1,6 +1,7 @@
 export const instant = false;
 
 import Link from "next/link";
+import MobileNav from "@/app/components/MobileNav";
 import { createClient } from "@/lib/supabase/server";
 
 type Player = {
@@ -82,7 +83,7 @@ export default async function PlayersPage() {
   return (
     <main className="min-h-screen bg-slate-950 text-white">
       {/* NAVBAR */}
-      <nav className="border-b border-slate-800">
+      <nav className="border-b border-slate-800 relative">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4">
           <Link href="/" className="text-xl font-bold">
             ⚽ Campus League
@@ -128,6 +129,8 @@ export default async function PlayersPage() {
               Stats
             </Link>
           </div>
+
+          <MobileNav currentPath="/players" />
         </div>
       </nav>
 

@@ -1,6 +1,7 @@
 export const instant = false;
 
 import Link from "next/link";
+import MobileNav from "@/app/components/MobileNav";
 import { createClient } from "@/lib/supabase/server";
 import TeamsRealtime from "./TeamsRealtime";
 
@@ -94,7 +95,7 @@ export default async function TeamsPage() {
   return (
     <main className="min-h-screen bg-slate-950 text-white">
       {/* NAVBAR */}
-      <nav className="border-b border-slate-800 bg-slate-950">
+      <nav className="border-b border-slate-800 bg-slate-950 relative">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4">
           <Link href="/" className="text-xl font-bold">
             ⚽ Campus League
@@ -131,6 +132,8 @@ export default async function TeamsPage() {
               Stats
             </Link>
           </div>
+
+          <MobileNav currentPath="/teams" />
         </div>
       </nav>
 
