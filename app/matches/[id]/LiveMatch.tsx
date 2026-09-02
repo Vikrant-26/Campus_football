@@ -1144,6 +1144,10 @@ export default function LiveMatch({
         return "🔄";
 
       case "added_time":
+      case "match_started":
+      case "halftime":
+      case "second_half_start":
+      case "full_time":
         return "⏱️";
 
       default:
@@ -1175,6 +1179,18 @@ export default function LiveMatch({
 
       case "added_time":
         return "Added Time";
+
+      case "match_started":
+        return "Match Started";
+
+      case "halftime":
+        return "Half Time";
+
+      case "second_half_start":
+        return "Second Half Started";
+
+      case "full_time":
+        return "Full Time";
 
       default:
         return "Match Event";
@@ -1367,7 +1383,6 @@ export default function LiveMatch({
         {events.length > 0 ? (
           <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900">
             {events
-              .filter((event) => event.event_type !== "second_half_start")
               .map((event) => (
                 <div
                   key={event.id}
@@ -2135,7 +2150,6 @@ export default function LiveMatch({
           </div>
         </div>
       </section>
-
 
     </>
   );

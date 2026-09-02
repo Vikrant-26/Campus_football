@@ -125,7 +125,9 @@ async function syncPlayerMinutes(
         half_duration_minutes,
         elapsed_seconds,
         current_half_started_at,
-        added_time_started
+        added_time_started,
+        added_time_minutes,
+        home_team_id
         `
       )
       .eq("id", currentMatchId)
@@ -1124,6 +1126,30 @@ export default async function AdminMatchPage({
       );
     }
 
+    // Record the start of the match in the viewer timeline.
+    const { error: matchStartedEventError } =
+      await serverSupabase
+        .from("match_events")
+        .insert({
+          match_id: matchId,
+          team_id: currentMatch.home_team_id ?? null,
+          player_id: null,
+          assist_player_id: null,
+          player_in_id: null,
+          player_out_id: null,
+          event_type: "match_started",
+          minute: 0,
+          added_time: 0,
+          description: "Match started.",
+        });
+
+    if (matchStartedEventError) {
+      console.error(
+        "Match-start event error:",
+        matchStartedEventError
+      );
+    }
+
     await syncPlayerMinutes(
       serverSupabase,
       matchId
@@ -1417,7 +1443,8 @@ export default async function AdminMatchPage({
           match_period,
           elapsed_seconds,
           half_duration_minutes,
-          current_half_started_at
+          current_half_started_at,
+          home_team_id
           `
         )
         .eq(
@@ -1522,6 +1549,33 @@ export default async function AdminMatchPage({
       serverSupabase,
       matchId
     );
+
+    const halftimeMinute = Math.floor(
+      regulation / 60
+    );
+
+    const { error: halftimeEventError } =
+      await serverSupabase
+        .from("match_events")
+        .insert({
+          match_id: matchId,
+          team_id: currentMatch.home_team_id ?? null,
+          player_id: null,
+          assist_player_id: null,
+          player_in_id: null,
+          player_out_id: null,
+          event_type: "halftime",
+          minute: halftimeMinute,
+          added_time: 0,
+          description: "Half time.",
+        });
+
+    if (halftimeEventError) {
+      console.error(
+        "Half-time event error:",
+        halftimeEventError
+      );
+    }
 
     redirect(
       `/admin/matches/${matchId}`
@@ -2001,7 +2055,9 @@ export default async function AdminMatchPage({
         half_duration_minutes,
         elapsed_seconds,
         current_half_started_at,
-        added_time_started
+        added_time_started,
+        added_time_minutes,
+        home_team_id
         `
       )
       .eq("id", matchId)
@@ -2103,6 +2159,44 @@ export default async function AdminMatchPage({
 
     redirect(
       `/admin/matches/${matchId}?error=end`
+    );
+  }
+
+  const fullTimeMinute = Math.floor(
+    totalElapsed / 60
+  );
+
+  // The current added-time value belongs to the second half here.
+  const secondHalfAddedMinutes =
+    currentMatch.added_time_started
+      ? Number(currentMatch.added_time_minutes ?? 0)
+      : 0;
+
+  const fullTimeDisplayMinute =
+    currentMatch.added_time_started
+      ? Number(currentMatch.half_duration_minutes) * 2
+      : fullTimeMinute;
+
+  const { error: fullTimeEventError } =
+    await serverSupabase
+      .from("match_events")
+      .insert({
+        match_id: matchId,
+        team_id: currentMatch.home_team_id ?? null,
+        player_id: null,
+        assist_player_id: null,
+        player_in_id: null,
+        player_out_id: null,
+        event_type: "full_time",
+        minute: fullTimeDisplayMinute,
+        added_time: secondHalfAddedMinutes,
+        description: "Full time.",
+      });
+
+  if (fullTimeEventError) {
+    console.error(
+      "Full-time event error:",
+      fullTimeEventError
     );
   }
 
