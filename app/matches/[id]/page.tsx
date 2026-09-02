@@ -235,6 +235,7 @@ export default async function MatchPage({ params }: PageProps) {
 
   const matchDate = new Date(typedMatch.match_date);
   const formattedDate = matchDate.toLocaleDateString("en-IN", {
+    timeZone: "Asia/Kolkata",
     weekday: "long",
     day: "numeric",
     month: "long",
@@ -242,6 +243,7 @@ export default async function MatchPage({ params }: PageProps) {
   });
 
   const formattedTime = matchDate.toLocaleTimeString("en-IN", {
+    timeZone: "Asia/Kolkata",
     hour: "numeric",
     minute: "2-digit",
   });
