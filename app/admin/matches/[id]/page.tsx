@@ -114,69 +114,93 @@ async function syncPlayerMinutes(
   serverSupabase: any,
   currentMatchId: number
 ) {
-  const { data: currentMatch, error: matchError } =
-    await serverSupabase
-      .from("matches")
-      .select(
-        `
-        id,
-        status,
-        match_period,
-        half_duration_minutes,
-        elapsed_seconds,
-        current_half_started_at,
-        added_time_started
-        `
-      )
-      .eq("id", currentMatchId)
-      .single();
+  const {
+    data: currentMatch,
+    error: matchError,
+  } = await serverSupabase
+    .from("matches")
+    .select(
+      `
+      id,
+      status,
+      match_period,
+      half_duration_minutes,
+      elapsed_seconds,
+      current_half_started_at,
+      added_time_started
+      `
+    )
+    .eq("id", currentMatchId)
+    .single();
 
   if (matchError || !currentMatch) {
-    console.error("Automatic minutes match error:", matchError);
+    console.error(
+      "Automatic minutes match error:",
+      matchError
+    );
     return;
   }
+
+  const regulationMinutes = Number(
+    currentMatch.half_duration_minutes ?? 0
+  );
 
   const regulationSeconds =
-    Number(currentMatch.half_duration_minutes ?? 0) * 60;
-  const regulationMinute =
-    Number(currentMatch.half_duration_minutes ?? 0);
+    regulationMinutes * 60;
 
-  const { data: lineups, error: lineupError } =
-    await serverSupabase
-      .from("match_lineups")
-      .select("team_id, starting_xi")
-      .eq("match_id", currentMatchId);
+  const {
+    data: lineups,
+    error: lineupError,
+  } = await serverSupabase
+    .from("match_lineups")
+    .select("team_id, starting_xi")
+    .eq("match_id", currentMatchId);
 
   if (lineupError) {
-    console.error("Automatic minutes lineup error:", lineupError);
+    console.error(
+      "Automatic minutes lineup error:",
+      lineupError
+    );
     return;
   }
 
-  // We need the half marker and added-time decisions so that
-  // second-half substitutions can be mapped from the displayed
-  // second-half clock onto the player's cumulative match timeline.
-  const { data: timelineEvents, error: timelineError } =
-    await serverSupabase
-      .from("match_events")
-      .select(
-        "id, team_id, event_type, minute, added_time, player_in_id, player_out_id"
-      )
-      .eq("match_id", currentMatchId)
-      .order("id", { ascending: true });
+  const {
+    data: timelineEvents,
+    error: timelineError,
+  } = await serverSupabase
+    .from("match_events")
+    .select(
+      `
+      id,
+      team_id,
+      event_type,
+      minute,
+      added_time,
+      player_in_id,
+      player_out_id
+      `
+    )
+    .eq("match_id", currentMatchId)
+    .order("id", { ascending: true });
 
   if (timelineError) {
-    console.error("Automatic minutes timeline error:", timelineError);
+    console.error(
+      "Automatic minutes timeline error:",
+      timelineError
+    );
     return;
   }
 
   const events = timelineEvents ?? [];
 
   const secondHalfStartEvent = events.find(
-    (event: any) => event.event_type === "second_half_start"
+    (event: any) =>
+      event.event_type === "second_half_start"
   );
 
   const secondHalfStartedAtId =
-    secondHalfStartEvent?.id ?? Number.POSITIVE_INFINITY;
+    secondHalfStartEvent?.id ??
+    Number.POSITIVE_INFINITY;
 
   const firstHalfAddedEvent = events
     .filter(
@@ -184,7 +208,10 @@ async function syncPlayerMinutes(
         event.event_type === "added_time" &&
         Number(event.id) < secondHalfStartedAtId
     )
-    .sort((a: any, b: any) => Number(b.id) - Number(a.id))[0];
+    .sort(
+      (a: any, b: any) =>
+        Number(b.id) - Number(a.id)
+    )[0];
 
   const firstHalfAddedMinutes = Math.max(
     0,
@@ -192,7 +219,7 @@ async function syncPlayerMinutes(
   );
 
   const firstHalfEndMinute =
-    regulationMinute + firstHalfAddedMinutes;
+    regulationMinutes + firstHalfAddedMinutes;
 
   let runningElapsedSeconds = Number(
     currentMatch.elapsed_seconds ?? 0
@@ -208,48 +235,62 @@ async function syncPlayerMinutes(
 
     runningElapsedSeconds += Math.max(
       0,
-      Math.floor((Date.now() - startedAt) / 1000)
+      Math.floor(
+        (Date.now() - startedAt) / 1000
+      )
     );
   }
 
-  // The database clock is intentionally half-based:
-  // first half starts at 0, second half starts at regulation.
-  // Player minutes use a separate cumulative timeline below.
   let currentMatchMinute = 0;
 
-  if (currentMatch.match_period === "first_half") {
-    const firstHalfElapsed = Math.max(
-      0,
-      runningElapsedSeconds / 60
-    );
+  if (
+    currentMatch.match_period === "first_half"
+  ) {
+    const firstHalfElapsedMinutes =
+      runningElapsedSeconds / 60;
 
-    currentMatchMinute = currentMatch.added_time_started
-      ? Math.min(
-          firstHalfEndMinute + Math.max(0, firstHalfElapsed - regulationMinute),
-          firstHalfEndMinute + 30
-        )
-      : Math.min(firstHalfElapsed, regulationMinute);
-  } else if (currentMatch.match_period === "halftime") {
+    if (currentMatch.added_time_started) {
+      currentMatchMinute =
+        regulationMinutes +
+        firstHalfAddedMinutes +
+        Math.max(
+          0,
+          firstHalfElapsedMinutes - regulationMinutes
+        );
+    } else {
+      currentMatchMinute = Math.min(
+        firstHalfElapsedMinutes,
+        regulationMinutes
+      );
+    }
+  } else if (
+    currentMatch.match_period === "halftime"
+  ) {
     currentMatchMinute = firstHalfEndMinute;
-  } else if (currentMatch.match_period === "second_half") {
-    const secondHalfElapsedSeconds = Math.max(
-      0,
-      runningElapsedSeconds - regulationSeconds
-    );
-
-    currentMatchMinute =
-      firstHalfEndMinute + secondHalfElapsedSeconds / 60;
-  } else if (currentMatch.match_period === "full_time") {
-    // elapsed_seconds at full time contains regulation + second-half
-    // elapsed time. Add the first-half stoppage time back into the
-    // player-minute timeline.
-    currentMatchMinute =
-      firstHalfEndMinute +
+  } else if (
+    currentMatch.match_period === "second_half"
+  ) {
+    const secondHalfElapsedSeconds =
       Math.max(
         0,
         runningElapsedSeconds - regulationSeconds
-      ) /
-        60;
+      );
+
+    currentMatchMinute =
+      firstHalfEndMinute +
+      secondHalfElapsedSeconds / 60;
+  } else if (
+    currentMatch.match_period === "full_time"
+  ) {
+    const secondHalfElapsedSeconds =
+      Math.max(
+        0,
+        runningElapsedSeconds - regulationSeconds
+      );
+
+    currentMatchMinute =
+      firstHalfEndMinute +
+      secondHalfElapsedSeconds / 60;
   } else {
     currentMatchMinute = Math.max(
       0,
@@ -257,16 +298,19 @@ async function syncPlayerMinutes(
     );
   }
 
-  const minutesByPlayer = new Map<number, number>();
+  const minutesByPlayer =
+    new Map<number, number>();
 
   for (const lineup of lineups ?? []) {
-    const startingXI = Array.isArray(lineup.starting_xi)
-      ? lineup.starting_xi
-          .map(Number)
-          .filter((id: number) => id > 0)
-      : [];
+    const startingXI =
+      Array.isArray(lineup.starting_xi)
+        ? lineup.starting_xi
+            .map(Number)
+            .filter((id: number) => id > 0)
+        : [];
 
-    const activePlayers = new Map<number, number>();
+    const activePlayers =
+      new Map<number, number>();
 
     for (const playerId of startingXI) {
       activePlayers.set(playerId, 0);
@@ -285,42 +329,45 @@ async function syncPlayerMinutes(
       const eventIsSecondHalf =
         Number(event.id) > secondHalfStartedAtId;
 
-      let eventMinute: number;
+      let eventMinute = 0;
 
       if (eventIsSecondHalf) {
-        // Second-half event minutes are expressed using the displayed
-        // second-half clock (regulation ... regulation+added). Map that
-        // clock onto the player's cumulative timeline after first-half
-        // stoppage time.
         eventMinute =
           firstHalfEndMinute +
           Math.max(
             0,
-            Number(event.minute ?? regulationMinute) -
-              regulationMinute
+            Number(
+              event.minute ?? regulationMinutes
+            ) - regulationMinutes
           );
       } else {
-        // First-half event minutes already use the first-half clock;
-        // added_time extends them beyond regulation.
         eventMinute =
           Number(event.minute ?? 0) +
           Number(event.added_time ?? 0);
       }
 
-      eventMinute = Math.min(
-        currentMatchMinute,
-        Math.max(0, eventMinute)
+      eventMinute = Math.max(
+        0,
+        Math.min(
+          currentMatchMinute,
+          eventMinute
+        )
       );
 
-      const playerOutId = Number(event.player_out_id);
-      const playerInId = Number(event.player_in_id);
+      const playerOutId = Number(
+        event.player_out_id
+      );
+
+      const playerInId = Number(
+        event.player_in_id
+      );
 
       if (
         playerOutId > 0 &&
         activePlayers.has(playerOutId)
       ) {
         const startedAt =
-          activePlayers.get(playerOutId) ?? eventMinute;
+          activePlayers.get(playerOutId) ?? 0;
 
         const played = Math.max(
           0,
@@ -330,7 +377,8 @@ async function syncPlayerMinutes(
         minutesByPlayer.set(
           playerOutId,
           Math.floor(
-            (minutesByPlayer.get(playerOutId) ?? 0) + played
+            (minutesByPlayer.get(playerOutId) ?? 0) +
+              played
           )
         );
 
@@ -338,7 +386,10 @@ async function syncPlayerMinutes(
       }
 
       if (playerInId > 0) {
-        activePlayers.set(playerInId, eventMinute);
+        activePlayers.set(
+          playerInId,
+          eventMinute
+        );
 
         if (!minutesByPlayer.has(playerInId)) {
           minutesByPlayer.set(playerInId, 0);
@@ -355,32 +406,37 @@ async function syncPlayerMinutes(
       minutesByPlayer.set(
         playerId,
         Math.floor(
-          (minutesByPlayer.get(playerId) ?? 0) + played
+          (minutesByPlayer.get(playerId) ?? 0) +
+            played
         )
       );
     }
   }
 
   for (const [playerId, minutes] of minutesByPlayer) {
-    const { error } =
-      await serverSupabase
-        .from("player_match_stats")
-        .upsert(
-          {
-            match_id: currentMatchId,
-            player_id: playerId,
-            minutes_played: Math.max(
-              0,
-              Math.min(Math.floor(minutes), 150)
-            ),
-          },
-          {
-            onConflict: "match_id,player_id",
-          }
-        );
+    const safeMinutes = Math.max(
+      0,
+      Math.min(Math.floor(minutes), 150)
+    );
+
+    const { error } = await serverSupabase
+      .from("player_match_stats")
+      .upsert(
+        {
+          match_id: currentMatchId,
+          player_id: playerId,
+          minutes_played: safeMinutes,
+        },
+        {
+          onConflict: "match_id,player_id",
+        }
+      );
 
     if (error) {
-      console.error("Automatic minutes save error:", error);
+      console.error(
+        "Automatic minutes save error:",
+        error
+      );
     }
   }
 }
