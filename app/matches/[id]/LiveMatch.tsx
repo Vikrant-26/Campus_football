@@ -1350,6 +1350,139 @@ export default function LiveMatch({
       </section>
 
       {/* =================================================
+          MATCH EVENTS
+          ================================================= */}
+
+      <section className="mt-8 pb-10">
+        <div className="mb-4">
+          <p className="text-sm text-emerald-400">
+            MATCH
+          </p>
+
+          <h2 className="text-2xl font-bold">
+            Match Events
+          </h2>
+        </div>
+
+        {events.length > 0 ? (
+          <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900">
+            {events
+              .filter((event) => event.event_type !== "second_half_start")
+              .map((event) => (
+                <div
+                  key={event.id}
+                  className="border-b border-slate-800 p-5 last:border-0"
+                >
+                  <div className="flex items-start gap-4">
+                    {/* MINUTE */}
+
+                    <div className="w-14 text-sm font-bold text-slate-500">
+                      {event.minute}
+
+                      {event.added_time
+                        ? `+${event.added_time}`
+                        : ""}
+                      &apos;
+                    </div>
+
+                    {/* ICON */}
+
+                    <div className="text-2xl">
+                      {eventIcon(
+                        event.event_type
+                      )}
+                    </div>
+
+                    {/* CONTENT */}
+
+                    <div>
+                      <p className="font-semibold">
+                        {eventLabel(
+                          event.event_type
+                        )}
+                      </p>
+
+                      {event.event_type !== "added_time" && (
+                        <p className="mt-1 text-sm text-slate-500">
+                          {getTeamName(
+                            event.team_id
+                          )}
+                        </p>
+                      )}
+
+                      {/* PLAYER */}
+
+                      {event.player_id && (
+                        <p className="mt-1 text-sm text-slate-300">
+                          Player:{" "}
+                          {getPlayerName(
+                            event.player_id
+                          )}
+                        </p>
+                      )}
+
+                      {/* ASSIST */}
+
+                      {event.assist_player_id && (
+                        <p className="mt-1 text-sm text-slate-500">
+                          Assist:{" "}
+                          {getPlayerName(
+                            event.assist_player_id
+                          )}
+                        </p>
+                      )}
+
+                      {/* SUBSTITUTION */}
+
+                      {event.event_type ===
+                        "substitution" && (
+                        <>
+                          <p className="mt-1 text-sm text-red-400">
+                            OUT:{" "}
+                            {getPlayerName(
+                              event.player_out_id
+                            )}
+                          </p>
+
+                          <p className="mt-1 text-sm text-emerald-400">
+                            IN:{" "}
+                            {getPlayerName(
+                              event.player_in_id
+                            )}
+                          </p>
+                        </>
+                      )}
+
+                      {event.event_type === "added_time" && (
+                        <p className="mt-1 text-sm font-semibold text-yellow-400">
+                          +{event.added_time ?? 0} minute
+                          {(event.added_time ?? 0) === 1 ? "" : "s"} added
+                        </p>
+                      )}
+
+                      {/* DESCRIPTION */}
+
+                      {event.description && event.event_type !== "added_time" && (
+                        <p className="mt-2 text-xs text-slate-600">
+                          {
+                            event.description
+                          }
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )
+            )}
+          </div>
+        ) : (
+          <div className="rounded-xl border border-slate-800 bg-slate-900 p-8 text-center text-slate-500">
+            No match events recorded yet.
+          </div>
+        )}
+      </section>
+
+      {/* =================================================
           LINEUPS
           ================================================= */}
 
@@ -2003,138 +2136,7 @@ export default function LiveMatch({
         </div>
       </section>
 
-      {/* =================================================
-          MATCH EVENTS
-          ================================================= */}
 
-      <section className="mt-8 pb-10">
-        <div className="mb-4">
-          <p className="text-sm text-emerald-400">
-            MATCH
-          </p>
-
-          <h2 className="text-2xl font-bold">
-            Match Events
-          </h2>
-        </div>
-
-        {events.length > 0 ? (
-          <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900">
-            {events
-              .filter((event) => event.event_type !== "second_half_start")
-              .map((event) => (
-                <div
-                  key={event.id}
-                  className="border-b border-slate-800 p-5 last:border-0"
-                >
-                  <div className="flex items-start gap-4">
-                    {/* MINUTE */}
-
-                    <div className="w-14 text-sm font-bold text-slate-500">
-                      {event.minute}
-
-                      {event.added_time
-                        ? `+${event.added_time}`
-                        : ""}
-                      &apos;
-                    </div>
-
-                    {/* ICON */}
-
-                    <div className="text-2xl">
-                      {eventIcon(
-                        event.event_type
-                      )}
-                    </div>
-
-                    {/* CONTENT */}
-
-                    <div>
-                      <p className="font-semibold">
-                        {eventLabel(
-                          event.event_type
-                        )}
-                      </p>
-
-                      {event.event_type !== "added_time" && (
-                        <p className="mt-1 text-sm text-slate-500">
-                          {getTeamName(
-                            event.team_id
-                          )}
-                        </p>
-                      )}
-
-                      {/* PLAYER */}
-
-                      {event.player_id && (
-                        <p className="mt-1 text-sm text-slate-300">
-                          Player:{" "}
-                          {getPlayerName(
-                            event.player_id
-                          )}
-                        </p>
-                      )}
-
-                      {/* ASSIST */}
-
-                      {event.assist_player_id && (
-                        <p className="mt-1 text-sm text-slate-500">
-                          Assist:{" "}
-                          {getPlayerName(
-                            event.assist_player_id
-                          )}
-                        </p>
-                      )}
-
-                      {/* SUBSTITUTION */}
-
-                      {event.event_type ===
-                        "substitution" && (
-                        <>
-                          <p className="mt-1 text-sm text-red-400">
-                            OUT:{" "}
-                            {getPlayerName(
-                              event.player_out_id
-                            )}
-                          </p>
-
-                          <p className="mt-1 text-sm text-emerald-400">
-                            IN:{" "}
-                            {getPlayerName(
-                              event.player_in_id
-                            )}
-                          </p>
-                        </>
-                      )}
-
-                      {event.event_type === "added_time" && (
-                        <p className="mt-1 text-sm font-semibold text-yellow-400">
-                          +{event.added_time ?? 0} minute
-                          {(event.added_time ?? 0) === 1 ? "" : "s"} added
-                        </p>
-                      )}
-
-                      {/* DESCRIPTION */}
-
-                      {event.description && event.event_type !== "added_time" && (
-                        <p className="mt-2 text-xs text-slate-600">
-                          {
-                            event.description
-                          }
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )
-            )}
-          </div>
-        ) : (
-          <div className="rounded-xl border border-slate-800 bg-slate-900 p-8 text-center text-slate-500">
-            No match events recorded yet.
-          </div>
-        )}
-      </section>
     </>
   );
 }
