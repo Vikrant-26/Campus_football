@@ -139,6 +139,8 @@ export default async function AdminPage() {
     return new Date(date).toLocaleDateString(
       "en-IN",
       {
+        timeZone: "Asia/Kolkata",
+        weekday: "short",
         day: "2-digit",
         month: "short",
         year: "numeric",
@@ -150,6 +152,7 @@ export default async function AdminPage() {
     return new Date(date).toLocaleTimeString(
       "en-IN",
       {
+        timeZone: "Asia/Kolkata",
         hour: "numeric",
         minute: "2-digit",
       }

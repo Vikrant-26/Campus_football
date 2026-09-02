@@ -174,6 +174,7 @@ export default async function AdminMatchesPage({
     ).toLocaleDateString(
       "en-IN",
       {
+        timeZone: "Asia/Kolkata",
         weekday: "short",
         day: "2-digit",
         month: "short",
@@ -190,6 +191,7 @@ export default async function AdminMatchesPage({
     ).toLocaleTimeString(
       "en-IN",
       {
+        timeZone: "Asia/Kolkata",
         hour: "numeric",
         minute: "2-digit",
       }

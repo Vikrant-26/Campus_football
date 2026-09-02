@@ -291,13 +291,16 @@ export default async function HomePage() {
 
   function formatDate(date: string) {
     return new Date(date).toLocaleDateString("en-IN", {
+      timeZone: "Asia/Kolkata",
+      weekday: "short",
       day: "2-digit",
       month: "short",
+      year: "numeric",
     });
   }
-
   function formatTime(date: string) {
     return new Date(date).toLocaleTimeString("en-IN", {
+      timeZone: "Asia/Kolkata",
       hour: "numeric",
       minute: "2-digit",
     });
